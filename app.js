@@ -7,8 +7,6 @@ import { Buffer } from "buffer";
 const { Connection,Keypair,LogsFilter,clusterApiUrl, PublicKey,Transaction,TransactionInstruction,sendAndConfirmTransaction,web3} = pkg;
 import fs from "fs";
 
-
-
 const app = express();
 
   const secretKey = fs.readFileSync(
@@ -48,18 +46,34 @@ const app = express();
   const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
   const systemProgram = new PublicKey('11111111111111111111111111111111');
   const rent = new PublicKey("SysvarRent111111111111111111111111111111111");
+  const authority = new PublicKey("FvGMnDGXGvsj1oVsmtcXmUnSRYjmhghwfc4T9RLoL6Zy");
 
-  const freeze =  await program.methods.freezeToken(amount,2,'hello').accounts({
+  // const freeze =  await program.methods.freezeToken(amount,2,'hello').accounts({
+  //     sender :sender,
+  //      senderAta :senderAta,
+  //      mint :mint,
+  //      vaultAccount :vaultAccount,
+  //      freezingConfig :freezingConfig,
+  //      tokenProgram :tokenProgram,
+  //      systemProgram : systemProgram, 
+  //      rent :rent
+  //   }
+  // ).rpc(); 
+  
+  const release = await program.methods.releaseToken(amount).accounts({
+      receiver : sender,
       sender :sender,
-       senderAta :senderAta,
+       receiverAta :senderAta,
        mint :mint,
        vaultAccount :vaultAccount,
+       vaultAuthority : authority,
        freezingConfig :freezingConfig,
        tokenProgram :tokenProgram,
        systemProgram : systemProgram, 
        rent :rent
-    }
-  ).rpc();  
+  }).rpc()
+
+  console.log(release);
 
 
 app.listen(3000,console.log("Awaiting orders"));
