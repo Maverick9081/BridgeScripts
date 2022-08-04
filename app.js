@@ -5,7 +5,8 @@ const  {BN} = pkgg;
 import pkg from "@solana/web3.js"
 import { Buffer } from "buffer";
 const { Connection,Keypair,LogsFilter,clusterApiUrl, PublicKey,Transaction,TransactionInstruction,sendAndConfirmTransaction,web3} = pkg;
-import fs from "fs";
+import fs from "fs"
+import { getAssociatedTokenAddress} from "@solana/spl-token";
 
 const app = express();
 
@@ -19,7 +20,7 @@ const app = express();
  
   const walletWrapper = new anchor.Wallet(keypair);
 
-  const contract = new PublicKey("6x3eDRVYWtsXyDdjKp971BKAYNd2FmfvbDoYV7RtGVgs")
+  const contract = new PublicKey("BJ1Lgyz2R9oqQuUYShkuaNgGf1ZKoeaga2LsgJeuF5zE")
   
   const commitment = 'processed';
   const connection = new anchor.web3.Connection('https://api.devnet.solana.com');
@@ -38,36 +39,57 @@ const app = express();
  
   const amount = new BN(1);
   const sender = new PublicKey("U4NHM8DNT3kCNrRtB9ymgt1mcR6RBaHwUHWLoxM4KTF");
-  const senderAta = new PublicKey("D6j2z6mg5sqzzjaGXmrDC7aXLjpDFnH9fdWTT8B4n1HB");
-  const mint = new PublicKey("5ncGkiTtRERfeaTQq7YeEPJQFS2M7wfRXyNUEYDbV45h");
-  const vaultAccount = new PublicKey("2tEzVUcvDejpZruu5o3t9EfxueVYchDBVzDgKkupBVXT");
+  const receiver = new PublicKey("U4NHM8DNT3kCNrRtB9ymgt1mcR6RBaHwUHWLoxM4KTF");
+  const mint = new PublicKey("98TWYg7K78Lz8b7DZv2fkqePT25msycMDSqX2cJoys6Q");
 
-  const freezingConfig = new PublicKey('CQVRDruPpPiKwebKFcZSz7wkEit4s6a4Siy75sJNscrs')
+
+  const senderAta = await getAssociatedTokenAddress(mint,sender);
+
+  const receiverAta = await getAssociatedTokenAddress(mint,receiver);
+  
+  const vaultAccount = await PublicKey.findProgramAddress([
+      Buffer.from("vault"),
+      mint.toBuffer()
+      ],
+      contract
+  )
+ 
+  const freezingConfig = await PublicKey.findProgramAddress([
+      Buffer.from("config"),
+      mint.toBuffer()
+      ],
+      contract
+  )
   const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
   const systemProgram = new PublicKey('11111111111111111111111111111111');
   const rent = new PublicKey("SysvarRent111111111111111111111111111111111");
-  const authority = new PublicKey("FvGMnDGXGvsj1oVsmtcXmUnSRYjmhghwfc4T9RLoL6Zy");
+
+  const authority = await PublicKey.findProgramAddress([
+      Buffer.from("escrow")
+      ],
+      contract
+  )
 
   // const freeze =  await program.methods.freezeToken(amount,2,'hello').accounts({
   //     sender :sender,
   //      senderAta :senderAta,
   //      mint :mint,
-  //      vaultAccount :vaultAccount,
-  //      freezingConfig :freezingConfig,
+  //      vaultAccount :vaultAccount[0],
+  //      freezingConfig :freezingConfig[0],
   //      tokenProgram :tokenProgram,
   //      systemProgram : systemProgram, 
   //      rent :rent
   //   }
   // ).rpc(); 
-  
+  // console.log(freeze);
   const release = await program.methods.releaseToken(amount).accounts({
-      receiver : sender,
+      receiver : receiver,
       sender :sender,
-       receiverAta :senderAta,
+       receiverAta :receiverAta,
        mint :mint,
-       vaultAccount :vaultAccount,
-       vaultAuthority : authority,
-       freezingConfig :freezingConfig,
+       vaultAccount :vaultAccount[0],
+       vaultAuthority : authority[0],
+       freezingConfig :freezingConfig[0],
        tokenProgram :tokenProgram,
        systemProgram : systemProgram, 
        rent :rent
